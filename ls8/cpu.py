@@ -1,13 +1,27 @@
 """CPU functionality."""
 
+# '_'
+
 import sys
+
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
 
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256
+        self.reg = [0] * 8
+        self.pc = 0
+
+    def ram_read(self, mar):
+        return self.ram[mar]
+
+    def ram_write(self, mdr, mar):
+        self.ram[mar] = mdr
 
     def load(self):
         """Load a program into memory."""
@@ -62,4 +76,17 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        running = True
+
+        while running:
+            IR = self.ram_read(self.pc)
+            # self.trace()
+
+            run_code = IR[self.pc]
+            print(run_code)
+
+            if run_code == 00:
+                self.pc += 1
+
+            if IR == HLT:
+                self.running = False
