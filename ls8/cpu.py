@@ -6,6 +6,10 @@ HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
+POP = 0b01000110
+PUSH = 0b01000101
+SP = 7
+
 
 class CPU:
     """Main CPU class."""
@@ -15,47 +19,31 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.reg[SP] = 0xf4 # 244
 
-    def ram_read(self, mar):
-        return self.ram[mar]
+    def ram_read(self, MAR):
+        if MAR > 255:
+            raise Exception(f'RAM does not extend to {MAR}')
+        return self.ram[MAR]
 
-    def ram_write(self, mdr, mar):
-        self.ram[mar] = mdr
+    def ram_write(self, MDR, MAR):
+        if MAR > 255:
+            raise Exception(f'RAM does not extend to {MAR}')
+        self.ram[MAR] = MDR
 
     def load(self):
         """Load a program into memory."""
-
         address = 0
 
-        # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     '0b10000010', # LDI R0,8
-        #     '0b00000000',
-        #     '0b00001000',
-        #     '0b01000111', # PRN R0
-        #     '0b00000000',
-        #     '0b00000001', # HLT
-        # ]
-
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
-
-
         try:
-            path = sys.argv[1]
-            with open(path) as f:
+            with open(sys.argv[1]) as f:
                 for line in f:
                     line = line.split('#')[0]
                     line = line.strip()
-
                     if line == '':
                         continue
-                    
-                    value = int(line, 2)
 
+                    value = int(line, 2)
                     self.ram[address] = value
                     address += 1
         except IndexError:
@@ -115,5 +103,17 @@ class CPU:
             elif IR == MUL:
                 self.alu('MUL', operand_a, operand_b)
                 self.pc += 3
+            elif IR == POP:
+                val = self.ram[self.reg[SP]]
+                reg = self.ram_read(self.pc + 1)
+                self.reg[reg] = val
+                self.reg[SP] += 1
+                self.pc += 2
+            elif IR == PUSH:
+                reg = self.ram_read(self.pc + 1)
+                val = self.reg[reg]
+                self.reg[SP] -= 1
+                self.ram[self.reg[SP]] = val
+                self.pc += 2
             else:
                 print('Unknown Instruction')
